@@ -1,0 +1,173 @@
+---
+title: 'Homework #8'
+author: "Advay Vyas"
+date: 4/14/25
+output:
+  pdf_document:
+    toc: true
+urlcolor: blue
+linkcolor: red
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=4, fig.width=6, fig.align = "center", warning=FALSE, echo=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60))
+```
+
+------------------------------------------------------------------------
+
+```{r, results='hide', warning=FALSE, message=FALSE}
+# loading libraries
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(sas7bdat)
+library(rvest)
+library(stringr)
+library(boot)
+library(mosaic)
+library(MatchIt)
+```
+
+# Introduction
+I'm Advay Vyas, EID: av37899, and this is my submission for SDS 315 Statistical Thinking Homework #8. The GitHub repository for my code is at this [link](https://github.com/advayvyas/SDSHW8).
+
+\newpage
+
+# Problem 1
+```{r}
+creatinine = read.csv("creatinine.csv")
+```
+
+## Part A
+```{r, message=FALSE, warning=FALSE}
+lm_creatine = lm(creatclear ~ age, data=creatinine)
+intercept = 147.8129158
+slope = -0.6198159
+```
+
+$$
+\hat{y} = 147.81- 0.62x
+$$
+
+After fitting the linear regression model (above), we ended with a y-intercept of `r round(intercept, 2)` and a slope of `r round(slope, 2)`. Therefore, to calculate the clearance rate for a 55-year old, we can just do the manual calculation of the intercept plus 55 times the slope. That results in a creatinine clearance rate of `r round((intercept + 55 * slope), 2)`.
+
+## Part B
+
+Creatinine clearance rate changes with age at a rate of `r round(slope, 2)` mL/minute per year. This value was determined through a linear regression model and this value is the slope of that model. 
+
+## Part C
+
+```{r}
+fourty_prediction = (intercept + 40 * slope)
+sixty_prediction = (intercept + 60 * slope)
+
+fourty_residual = 135 - fourty_prediction
+sixty_residual = 112 - sixty_prediction
+```
+
+To find whose clearance rate was higher for their age, we calculated the residual for each of these individuals. The predicted value for the 40-year-old was calculated with the intercept + 40 times the slope to result in `r round(fourty_prediction, 2)`. Similarly the 60-year-old had a predicted value of intercept + 60 times the slope for `r round(sixty_prediction, 2)`.
+
+Next, we just subtracted their predicted values from their actual values since the actual values are greater and figured out that since `r round(fourty_residual, 2)` is greater than `r round(sixty_residual, 2)`, the 40-year-old has a higher rate for his age according to the linear regression.
+
+# Problem 2
+```{r}
+covid = read.csv("covid.csv")
+```
+
+## Part A
+```{r, cache=TRUE}
+results_i = do(10000) * {
+  model = lm(log(deaths) ~ days_since_first_death, 
+             data=mosaic::resample(covid[covid$country=="Italy",]))
+  growth = as.numeric(coef(model)[2])
+  rule_of_seventy = 70 / (growth * 100)
+  data.frame(growth_rate = growth, doubling_time = rule_of_seventy)
+}
+```
+
+```{r, message=FALSE}
+ci_growth_i = confint(results_i$growth_rate, level = 0.95)
+ci_doubling_i = confint(results_i$doubling_time, level = 0.95)
+
+est_growth_i = mean(results_i$growth_rate)
+est_doubling_i = mean(results_i$doubling_time)
+```
+To calculate these values, we first bootstrap COVID data (filtered by country equaling Italy) 10,000 times, fit a linear regression model each time, and then create a data set of the coefficients. From that data set, we get the estimate and use mosaic's confint function to calculate confidence intervals.
+
+**Estimate for Growth Rate in Italy:** `r round(est_growth_i, 2)`
+
+**95% Confidence Interval for Growth Rate in Italy:** [`r round(ci_growth_i[1,1], 7)`, `r round(ci_growth_i[1,2], 7)`]
+
+
+For the doubling time, we divide 70 by the growth rate which follows from the established rule of 70 in class. A similar process to growth rate is followed to generate the values below.
+
+**Estimate for Doubling Time in Italy:** `r round(est_doubling_i,2)`
+
+**95% Confidence Interval for Doubling Time in Italy:** [`r round(ci_doubling_i[1,1], 7)`, `r round(ci_doubling_i[1,2], 7)`]
+
+## Part B
+```{r, cache=TRUE}
+results_s = do(10000) * {
+  model = lm(log(deaths) ~ days_since_first_death, 
+             data=mosaic::resample(covid[covid$country=="Spain",]))
+  growth = as.numeric(coef(model)[2])
+  rule_of_seventy = 70 / (growth * 100)
+  data.frame(growth_rate = growth, doubling_time = rule_of_seventy)
+}
+```
+
+```{r, message=FALSE}
+ci_growth_s = confint(results_s$growth_rate, level = 0.95)
+ci_doubling_s = confint(results_s$doubling_time, level = 0.95)
+
+est_growth_s = mean(results_s$growth_rate)
+est_doubling_s = mean(results_s$doubling_time)
+```
+Like the Italy version, these values are created by bootstrapping and in-built R functions.
+
+**Estimate for Growth Rate in Spain:** `r round(est_growth_s, 2)`
+
+**95% Confidence Interval for Growth Rate in Spain:** [`r round(ci_growth_s[1,1], 7)`, `r round(ci_growth_s[1,2], 7)`]
+
+
+For the doubling time, a similar process follows and creates the below values.
+
+**Estimate for Doubling Time in Spain:** `r round(est_doubling_s,2)`
+
+**95% Confidence Interval for Doubling Time in Spain:** [`r round(ci_doubling_s[1,1], 7)`, `r round(ci_doubling_s[1,2], 7)`]
+
+## Part C
+This line graph shows daily COVID cases over time, split into a line for Italy and a line for Spain.
+```{r}
+ggplot(covid) + geom_line(aes(x=days_since_first_death, y=deaths, col=country), linewidth=0.8) + theme_minimal() + 
+  labs(title = "Daily COVID cases over time", x="Days since first death", y="Deaths")
+```
+
+# Problem 3
+```{r}
+milk = read.csv("milk.csv")
+```
+
+```{r, cache=TRUE}
+power_law = do(10000) * {
+  model = lm(log(sales) ~ log(price), data=mosaic::resample(milk))
+  elasticity = as.numeric(coef(model)[2])
+  data.frame(price_elasticity = elasticity)
+}
+```
+
+```{r, message=FALSE}
+ci_elasticity = confint(power_law$price_elasticity, level = 0.95)
+
+est_elasticity = mean(power_law$price_elasticity)
+```
+The formula for a power-law relationship is $y = Kx^\beta$, where $K$ is the initial value of $y$ and $\beta$ is the elasticity (proportional change in $y$ with respect to $x$). To relate this idea to our example, we attempt to fit a power-law relationship to our data.
+
+From the textbook, we know we can break up that earlier equation into $\log y = \log K + \beta \log x$. Therefore, if we can fit a linear regression model that relates $\log y$ and $\log x$, then the slope of that regression model will be $\beta$. 
+
+Now, let $y$ represent sales and $x$ represent price, which implies that $\beta$ is the price elasticity of milk by the definition above. Fitting the aforementioned linear regression model, we receive the estimate and confidence interval below.
+
+**Estimate for Price Elasticity of Milk:** `r round(est_elasticity, 2)`
+
+**95% Confidence Interval for Price Elasticity of Milk:** [`r round(ci_elasticity[1,1], 7)`, `r round(ci_elasticity[1,2], 7)`]
+
