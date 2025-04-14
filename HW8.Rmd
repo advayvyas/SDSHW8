@@ -94,14 +94,14 @@ est_doubling_i = mean(results_i$doubling_time)
 ```
 To calculate these values, we first bootstrap COVID data (filtered by country equaling Italy) 10,000 times, fit a linear regression model each time, and then create a data set of the coefficients. From that data set, we get the estimate and use mosaic's confint function to calculate confidence intervals.
 
-**Estimate for Growth Rate in Italy:** `r round(est_growth_i, 2)`
+**Estimate for Growth Rate in Italy:** `r round(est_growth_i, 3)`
 
 **95% Confidence Interval for Growth Rate in Italy:** [`r round(ci_growth_i[1,1], 7)`, `r round(ci_growth_i[1,2], 7)`]
 
 
 For the doubling time, we divide 70 by the growth rate which follows from the established rule of 70 in class. A similar process to growth rate is followed to generate the values below.
 
-**Estimate for Doubling Time in Italy:** `r round(est_doubling_i,2)`
+**Estimate for Doubling Time in Italy:** `r round(est_doubling_i,1)` days
 
 **95% Confidence Interval for Doubling Time in Italy:** [`r round(ci_doubling_i[1,1], 7)`, `r round(ci_doubling_i[1,2], 7)`]
 
@@ -125,14 +125,14 @@ est_doubling_s = mean(results_s$doubling_time)
 ```
 Like the Italy version, these values are created by bootstrapping and in-built R functions.
 
-**Estimate for Growth Rate in Spain:** `r round(est_growth_s, 2)`
+**Estimate for Growth Rate in Spain:** `r round(est_growth_s, 3)`
 
 **95% Confidence Interval for Growth Rate in Spain:** [`r round(ci_growth_s[1,1], 7)`, `r round(ci_growth_s[1,2], 7)`]
 
 
 For the doubling time, a similar process follows and creates the below values.
 
-**Estimate for Doubling Time in Spain:** `r round(est_doubling_s,2)`
+**Estimate for Doubling Time in Spain:** `r round(est_doubling_s, 1)` days
 
 **95% Confidence Interval for Doubling Time in Spain:** [`r round(ci_doubling_s[1,1], 7)`, `r round(ci_doubling_s[1,2], 7)`]
 
@@ -140,7 +140,7 @@ For the doubling time, a similar process follows and creates the below values.
 This line graph shows daily COVID cases over time, split into a line for Italy and a line for Spain.
 ```{r}
 ggplot(covid) + geom_line(aes(x=days_since_first_death, y=deaths, col=country), linewidth=0.8) + theme_minimal() + 
-  labs(title = "Daily COVID cases over time", x="Days since first death", y="Deaths")
+  labs(title = "Daily COVID deaths over time", x="Days since first death", y="Deaths")
 ```
 
 # Problem 3
@@ -167,7 +167,7 @@ From the textbook, we know we can break up that earlier equation into $\log y = 
 
 Now, let $y$ represent sales and $x$ represent price, which implies that $\beta$ is the price elasticity of milk by the definition above. Fitting the aforementioned linear regression model, we receive the estimate and confidence interval below.
 
-**Estimate for Price Elasticity of Milk:** `r round(est_elasticity, 2)`
+**Estimate for Price Elasticity of Milk:** `r round(est_elasticity, 3)`
 
 **95% Confidence Interval for Price Elasticity of Milk:** [`r round(ci_elasticity[1,1], 7)`, `r round(ci_elasticity[1,2], 7)`]
 
